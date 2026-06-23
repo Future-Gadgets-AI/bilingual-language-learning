@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bll · operator console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#14110E; --ink2:#1d1915; --ink3:#26211b;
+  --paper:#F5F2EA; --muted:#9b9489; --rule:#3A352E;
+  --amber:#E8A33D; --amber-dim:#7a5a23; --jade:#5B8C7B; --red:#d2674f;
+  --jp:"Zen Kaku Gothic New",system-ui,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ink);color:var(--paper);font-family:var(--jp);
+  font-weight:400;-webkit-font-smoothing:antialiased;line-height:1.45}
+a{color:var(--amber)}
+button{font-family:var(--jp);cursor:pointer}
+input,select{font-family:var(--mono)}
+
+/* ---- header ---- */
+header{display:flex;align-items:baseline;gap:1.4rem;padding:.9rem 1.4rem;
+  border-bottom:1px solid var(--rule);position:sticky;top:0;background:var(--ink);z-index:10}
+.brand{font-weight:900;font-size:1.25rem;letter-spacing:.02em}
+.brand ruby rt{color:var(--amber);font-size:.5em;font-weight:500}
+.brand small{color:var(--muted);font-weight:400;font-size:.62rem;letter-spacing:.18em;
+  text-transform:uppercase;margin-left:.5rem}
+.spacer{flex:1}
+.stat{font-family:var(--mono);font-size:.74rem;color:var(--muted)}
+.stat b{color:var(--paper);font-weight:500}
+.stat .amber{color:var(--amber)} .stat .jade{color:var(--jade)}
+.dot{display:inline-block;width:.55rem;height:.55rem;border-radius:50%;margin-right:.35rem;
+  vertical-align:middle;background:var(--red)}
+.dot.ok{background:var(--jade)} .dot.warn{background:var(--amber)}
+select.campaign{background:var(--ink2);color:var(--paper);border:1px solid var(--rule);
+  padding:.3rem .5rem;border-radius:3px;font-size:.74rem}
+
+/* ---- layout ---- */
+main{display:grid;grid-template-columns:minmax(340px,400px) 1fr;gap:0;min-height:calc(100vh - 56px)}
+.rail{border-right:1px solid var(--rule);padding:1.1rem 1.2rem;overflow:auto}
+.vocab{padding:1.1rem 1.4rem;overflow:auto}
+
+/* ---- tabs ---- */
+.tabs{display:flex;gap:.2rem;margin-bottom:1rem;border-bottom:1px solid var(--rule)}
+.tab{background:none;border:none;color:var(--muted);padding:.5rem .7rem;font-size:.82rem;
+  font-weight:500;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab.active{color:var(--paper);border-bottom-color:var(--amber)}
+.panel{display:none} .panel.active{display:block}
+
+/* ---- forms ---- */
+label.f{display:block;margin:.7rem 0 .2rem;font-size:.7rem;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--muted)}
+.row{display:flex;gap:.5rem}.row>*{flex:1}
+input[type=text],input[type=number],select.k{width:100%;background:var(--ink2);
+  color:var(--paper);border:1px solid var(--rule);border-radius:3px;padding:.4rem .5rem;font-size:.8rem}
+input:focus,select:focus{outline:none;border-color:var(--amber)}
+.pick{display:flex;gap:.4rem}.pick input{flex:1}
+.btn{background:var(--ink3);color:var(--paper);border:1px solid var(--rule);
+  border-radius:3px;padding:.4rem .7rem;font-size:.78rem;font-weight:500}
+.btn:hover{border-color:var(--muted)}
+.btn.go{background:var(--amber);color:var(--ink);border-color:var(--amber);font-weight:700;
+  width:100%;padding:.6rem;margin-top:1rem;font-size:.9rem}
+.btn.go:hover{filter:brightness(1.08)}
+.btn.ghost{background:none}
+.chk{display:flex;align-items:center;gap:.45rem;margin:.6rem 0;font-size:.8rem;color:var(--paper)}
+.chk input{accent-color:var(--amber);width:1rem;height:1rem}
+details.adv{margin-top:.7rem;border-top:1px solid var(--rule);padding-top:.6rem}
+details.adv summary{cursor:pointer;font-size:.72rem;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--muted)}
+.hint{font-size:.68rem;color:var(--muted);margin-top:.3rem}
+
+/* ---- episode timeline strip ---- */
+.tlwrap{margin-bottom:1.1rem}
+.tlbar{display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem}
+.tltitle{font-size:1rem;font-weight:700}
+.tlpos{font-family:var(--mono);font-size:.72rem;color:var(--muted)}
+.tlbar input{background:var(--ink2);color:var(--paper);border:1px solid var(--rule);
+  border-radius:3px;padding:.3rem .5rem;font-size:.74rem;width:220px}
+.tlbar input:focus{outline:none;border-color:var(--amber)}
+.tl{display:flex;gap:.4rem;overflow-x:auto;padding-bottom:.5rem}
+.tl-ep{flex:none;min-width:72px;background:var(--ink2);border:1px solid var(--rule);
+  border-radius:5px;padding:.4rem .55rem;cursor:pointer;position:relative}
+.tl-ep:hover{border-color:var(--amber)}
+.tl-ep.sel{border-color:var(--amber);background:#201810;box-shadow:inset 0 0 0 1px var(--amber)}
+.tlsel{display:none;align-items:center;gap:.5rem;margin-top:.6rem;padding-top:.6rem;
+  border-top:1px solid var(--rule)}
+.tlsel.on{display:flex}
+.tlsel-count{font-family:var(--mono);font-size:.72rem;color:var(--amber)}
+.tlsel input{background:var(--ink2);color:var(--paper);border:1px solid var(--rule);
+  border-radius:3px;padding:.3rem .5rem;font-size:.76rem;flex:1;max-width:240px}
+.tlsel input:focus{outline:none;border-color:var(--amber)}
+.pvbanner{display:none;background:#201810;border:1px solid #6e5226;border-radius:5px;
+  padding:.5rem .7rem;margin-bottom:.7rem;font-size:.78rem;color:var(--paper)}
+.pvbanner.on{display:block}
+.pvbanner b{color:var(--amber);font-weight:500}
+.vocab.preview .note,.vocab.preview select.ov{opacity:.6;pointer-events:none}
+.tl-pos{font-family:var(--mono);font-size:.54rem;color:var(--muted)}
+.tl-show{font-size:.58rem;color:var(--amber);white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;max-width:9rem;margin-top:.1rem}
+.tl-show .unset{color:var(--muted)}
+.tl-label{font-size:.82rem;font-weight:500;white-space:nowrap}
+.tl-meta{font-family:var(--mono);font-size:.56rem;color:var(--muted);margin-top:.15rem}
+/* episode metadata editor */
+.epcard{background:var(--ink2);border:1px solid var(--rule);border-radius:8px;
+  width:min(380px,92vw);padding:1.1rem 1.2rem}
+.ec-title{font-weight:700;font-size:1rem;margin-bottom:.6rem}
+.epcard input{width:100%;background:var(--ink);color:var(--paper);border:1px solid var(--rule);
+  border-radius:3px;padding:.45rem .5rem;font-size:.85rem}
+.epcard input:focus{outline:none;border-color:var(--amber)}
+.ec-actions{display:flex;align-items:center;gap:.5rem;margin-top:1rem}
+.w-life{font-family:var(--mono);font-size:.6rem;color:var(--muted);margin:.25rem 0 0}
+.w-life b{color:var(--jade);font-weight:500}
+
+/* ---- vocabulary: the fade list ---- */
+.vhead{display:flex;align-items:baseline;gap:1rem;margin-bottom:.3rem}
+.vhead h2{font-size:1rem;font-weight:700;margin:0}
+.vfilter{display:flex;gap:.2rem}
+.vfilter button{background:none;border:none;color:var(--muted);font-size:.74rem;
+  padding:.2rem .45rem;border-radius:3px;font-weight:500}
+.vfilter button.on{color:var(--ink);background:var(--paper)}
+.legend{font-size:.66rem;color:var(--muted);margin-bottom:.8rem;font-family:var(--mono)}
+.legend i{font-style:normal;border-bottom:2px solid var(--amber);padding-bottom:1px}
+.wordlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.55rem}
+.word{background:var(--ink2);border:1px solid var(--rule);border-radius:5px;padding:.7rem .8rem .65rem;
+  position:relative;overflow:hidden}
+/* the amber underline whose strength == how far from graduation (the fade) */
+.word::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;
+  background:var(--amber);opacity:var(--fade,0)}
+/* ACTIVE = still in the learning slot: warm amber-tinted card, prominent fade */
+.word.active{background:#201810;border-color:#6e5226}
+.word.active::after{height:4px}
+.word.known{border-color:var(--jade)}
+.word.ignored{opacity:.45}
+.w-top{display:flex;align-items:flex-start;justify-content:space-between;gap:.4rem}
+ruby.lex{font-size:1.7rem;font-weight:500;line-height:1.1}
+ruby.lex rt{font-family:var(--mono);font-size:.34em;color:var(--amber);font-weight:400;letter-spacing:.02em}
+.word.bare ruby.lex rt{color:var(--muted)}      /* graduated: reading recedes */
+.w-stage{font-family:var(--mono);font-size:.6rem;color:var(--muted);text-align:right;white-space:nowrap}
+.w-exp{color:var(--paper)}
+.w-gap{color:var(--muted);font-size:.58rem;letter-spacing:.01em}
+.gloss{font-size:.82rem;color:var(--paper);margin:.35rem 0 .2rem}
+.note{font-family:var(--mono);font-size:.7rem;color:var(--amber);width:100%;background:transparent;
+  border:none;border-bottom:1px dashed transparent;padding:.15rem 0;resize:none}
+.note:hover{border-bottom-color:var(--rule)}
+.note:focus{outline:none;border-bottom-color:var(--amber);color:var(--paper)}
+.w-ov{margin-top:.45rem}
+select.ov{background:var(--ink3);color:var(--muted);border:1px solid var(--rule);border-radius:3px;
+  font-family:var(--mono);font-size:.62rem;padding:.12rem .3rem}
+select.ov:hover{color:var(--paper);border-color:var(--muted)}
+.word.known select.ov,.word.ignored select.ov{color:var(--paper)}
+
+/* ---- job console ---- */
+#console{position:fixed;right:0;bottom:0;width:min(620px,46vw);max-height:62vh;
+  background:#0d0b09;border:1px solid var(--rule);border-right:none;border-bottom:none;
+  border-radius:8px 0 0 0;display:none;flex-direction:column;z-index:20;box-shadow:0 0 40px #000a}
+#console.open{display:flex}
+.con-head{display:flex;align-items:center;gap:.6rem;padding:.5rem .8rem;border-bottom:1px solid var(--rule)}
+.con-head .lbl{font-weight:500;font-size:.82rem}
+.con-head .st{font-family:var(--mono);font-size:.7rem;padding:.1rem .5rem;border-radius:3px}
+.st.running{background:var(--amber-dim);color:var(--amber)}
+.st.done{background:#26402f;color:var(--jade)} .st.failed{background:#3a1f1a;color:var(--red)}
+.con-body{font-family:var(--mono);font-size:.72rem;line-height:1.5;color:#cfc8bb;
+  padding:.6rem .8rem;overflow:auto;white-space:pre-wrap;word-break:break-word}
+.con-body .veto{color:var(--red)} .con-body .new{color:var(--amber)} .con-body .ok{color:var(--jade)}
+.x{margin-left:auto;background:none;border:none;color:var(--muted);font-size:1rem}
+
+/* ---- file browser modal ---- */
+.modal{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:40}
+.modal.open{display:flex}
+.browser{background:var(--ink2);border:1px solid var(--rule);border-radius:8px;width:min(640px,92vw);
+  max-height:80vh;display:flex;flex-direction:column}
+.br-head{padding:.7rem .9rem;border-bottom:1px solid var(--rule);font-family:var(--mono);font-size:.76rem}
+.br-list{overflow:auto;padding:.4rem}
+.br-item{display:flex;align-items:center;gap:.5rem;padding:.35rem .6rem;border-radius:4px;cursor:pointer;font-size:.82rem}
+.br-item:hover{background:var(--ink3)}
+.br-item .ic{color:var(--muted);font-family:var(--mono);font-size:.7rem;width:1.4rem}
+.br-item.sub .ic{color:var(--amber)}
+.toast{position:fixed;bottom:1rem;left:1rem;background:var(--ink3);border:1px solid var(--rule);
+  border-left:3px solid var(--amber);padding:.6rem .9rem;border-radius:4px;font-size:.8rem;
+  z-index:50;display:none;max-width:380px}
+.toast.bad{border-left-color:var(--red)}
+
+/* ---- hover tooltips (every control explains itself) ---- */
+#tip{position:fixed;z-index:60;max-width:264px;background:#0d0b09;border:1px solid var(--rule);
+  border-left:3px solid var(--amber);color:var(--paper);font-size:.72rem;line-height:1.45;
+  padding:.5rem .65rem;border-radius:4px;pointer-events:none;opacity:0;transition:opacity .1s;
+  box-shadow:0 6px 24px #000a}
+#tip.show{opacity:1}
+[data-tip]{cursor:help}
+[data-tip] input,[data-tip] select{cursor:auto}
+.badge{font-family:var(--mono);font-size:.56rem;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--jade);border:1px solid #2f5247;border-radius:3px;padding:.05rem .3rem}
+.badge.active{color:var(--ink);background:var(--amber);border-color:var(--amber)}
+.badge.known{color:var(--jade);border-color:var(--jade)}
+.badge.ig{color:var(--muted);border-color:var(--rule)}
+</style>
+</head>
+<body>
+<header>
+  <span class="brand"><ruby>日本語<rt>bll</rt></ruby><small>operator console</small></span>
+  <span class="spacer"></span>
+  <span class="stat" id="hstats">—</span>
+  <select class="campaign" id="campaign" title="active campaign (database)"></select>
+  <span class="stat" id="ollama" title="aligner status"><span class="dot"></span>aligner</span>
+</header>
+
+<main>
+  <section class="rail">
+    <div class="tabs">
+      <button class="tab active" data-tab="episode">Episode</button>
+      <button class="tab" data-tab="season">Season</button>
+      <button class="tab" data-tab="render">Render</button>
+      <button class="tab" data-tab="model">Model</button>
+    </div>
+
+    <!-- EPISODE -->
+    <div class="panel active" id="p-episode">
+      <label class="f" data-tip="The Japanese subtitle file (.srt/.ass). bll reads it to find which words to teach and to align each one with the English line at the same time.">Japanese subtitle</label>
+      <div class="pick"><input type="text" id="ja_sub" placeholder="…/ep.ja.srt">
+        <button class="btn" onclick="browse('ja_sub')">browse</button></div>
+      <label class="f" data-tip="The English subtitle for the same video cut. This is the file Japanese words get injected into.">English subtitle</label>
+      <div class="pick"><input type="text" id="en_sub" placeholder="…/ep.en.ass">
+        <button class="btn" onclick="browse('en_sub')">browse</button></div>
+      <label class="f" data-tip="Where to write the output. Leave blank to write next to the English file. Four layers are produced (adaptive, plain, kana, answers) plus a plan sidecar.">Output (optional)</label>
+      <div class="pick"><input type="text" id="output" placeholder="…/ep.bll.ass">
+        <button class="btn" onclick="browse('output',true)">dir</button></div>
+      <div class="row">
+        <div data-tip="Show/series name for this episode. Auto-filled from the folder; edit freely."><label class="f">Show</label><input type="text" id="show_in" placeholder="auto from folder"></div>
+        <div data-tip="Episode number. Auto-parsed from the filename; edit if wrong."><label class="f">Episode #</label><input type="text" id="ep_in" placeholder="auto"></div>
+      </div>
+
+      <div class="row">
+        <div data-tip="How many brand-new words to introduce this episode. They're oversampled and only the best that survive alignment are kept."><label class="f">New words</label><input type="number" id="new_words" min="0"></div>
+        <div data-tip="Cap on words still being actively learned at once. New words wait until one consolidates and frees a slot, so you're never overloaded."><label class="f">Max active</label><input type="number" id="max_active" min="1"></div>
+      </div>
+      <div class="row">
+        <div data-tip="Once a word reaches this many lifetime exposures, its reading (kana/romaji) is dropped and only the kanji is shown — the visible graduation."><label class="f">Kana fade ≥</label><input type="number" id="kana_threshold"></div>
+        <div data-tip="Show the top-of-screen note for a word only while its lifetime exposures are below this number."><label class="f">Note until <</label><input type="number" id="note_threshold"></div>
+      </div>
+      <label class="chk" data-tip="Annotate readings in romaji (Latin letters) instead of kana."><input type="checkbox" id="romaji"> Romaji readings</label>
+
+      <details class="adv">
+        <summary>Advanced selection / alignment</summary>
+        <label class="f" data-tip="A folder of upcoming episodes. Words that recur later in the season are prioritized, so what you learn now pays off soon.">Season lookahead folder</label>
+        <div class="pick"><input type="text" id="season_dir" placeholder="rest-of-season tiebreaker">
+          <button class="btn" onclick="browse('season_dir',true)">dir</button></div>
+        <div class="row">
+          <div data-tip="Exposures at which a word is considered consolidated (learned) and stops counting against Max active, freeing a slot for a new word."><label class="f">Learning thr.</label><input type="number" id="learning_threshold"></div>
+          <div data-tip="Most injected words allowed in a single subtitle line. 0 = unlimited: every match is replaced, including identical repeats within the same line. A positive value caps replacements per line to preserve readability."><label class="f">Max per cue</label><input type="number" id="max_per_cue"></div>
+        </div>
+        <div class="row">
+          <div data-tip="A word must appear at least this many times in the episode to be eligible, so you get built-in repetition the moment you learn it."><label class="f">Min count</label><input type="number" id="min_count"></div>
+          <div data-tip="Minimum real-world frequency on the wordfreq zipf scale (1 rare … 7 very common). Filters out obscure words so you learn common vocabulary first."><label class="f">Min zipf</label><input type="number" id="min_zipf" step="0.1"></div>
+        </div>
+        <div class="row">
+          <div data-tip="The forgetting-clock window, in Japanese tokens of watched content. A consolidated word shows its reading again if it hasn't appeared in this much material."><label class="f">Decay tokens</label><input type="number" id="decay_tokens"></div>
+          <div data-tip="Parts of speech eligible as new words, e.g. noun,adj. Verbs and adverbs sit awkwardly in English frames, so they're opt-in."><label class="f">Include POS</label><input type="text" id="include_pos"></div>
+        </div>
+        <label class="f" data-tip="Alignment engine. ollama runs locally with no API key (recommended); claude uses the Claude CLI. Leave the model blank to use the tuned bll-align profile.">Backend / model</label>
+        <div class="row">
+          <select class="k" id="backend"><option>ollama</option><option>claude</option></select>
+          <input type="text" id="model" placeholder="(auto: bll-align)">
+        </div>
+        <label class="f" data-tip="Optional JSON file mapping a word to a custom note, overriding the auto-generated ‘kanji (reading) = meaning’.">Notes override file (optional)</label>
+        <div class="pick"><input type="text" id="notes" placeholder="auto: kanji (reading)=gloss">
+          <button class="btn" onclick="browse('notes')">browse</button></div>
+        <label class="chk" data-tip="Turn off the JMdict safety check that vetoes wrong or reversed translations. Not recommended — it's what guarantees a word is never taught with the wrong meaning."><input type="checkbox" id="no_dict"> Disable JMdict veto</label>
+      </details>
+
+      <label class="chk" data-tip="Preview which words would be selected without writing any subtitles or changing the database."><input type="checkbox" id="dry_run"> Dry run</label>
+      <button class="btn go" onclick="runProcess()">Process episode</button>
+    </div>
+
+    <!-- SEASON -->
+    <div class="panel" id="p-season">
+      <p class="hint">Batch every <code>*.ja.*</code> + matching <code>*.en.*</code> pair in a folder,
+        in order, each with the rest-of-season lookahead. The whole per-season run is one streamed job.</p>
+      <label class="f" data-tip="Folder holding the season's subtitles. Every Japanese file paired with its English counterpart is processed in filename order.">Season folder</label>
+      <div class="pick"><input type="text" id="s_dir" placeholder="…/season01/">
+        <button class="btn" onclick="browse('s_dir',true)">dir</button></div>
+      <label class="f" data-tip="Optional folder to write each episode's output into — e.g. next to your video files so a player picks the subtitles up automatically.">Install outputs into (optional)</label>
+      <div class="pick"><input type="text" id="s_install" placeholder="alongside the videos">
+        <button class="btn" onclick="browse('s_install',true)">dir</button></div>
+      <label class="f" data-tip="Show/series name applied to every episode in the batch. Each episode's number is auto-detected from its filename.">Show name (optional)</label>
+      <input type="text" id="s_show" placeholder="auto from folder" style="width:100%;background:var(--ink2);color:var(--paper);border:1px solid var(--rule);border-radius:3px;padding:.4rem .5rem;font-size:.8rem">
+      <div class="row">
+        <div data-tip="How many new words to introduce per episode across the batch."><label class="f">New words/ep</label><input type="number" id="s_new_words" min="0"></div>
+        <div data-tip="Cap on words being actively learned at once, applied across the whole season."><label class="f">Max active</label><input type="number" id="s_max_active" min="1"></div>
+      </div>
+      <label class="chk" data-tip="Annotate readings in romaji instead of kana."><input type="checkbox" id="s_romaji"> Romaji readings</label>
+      <button class="btn go" onclick="runSeason()">Run season batch</button>
+    </div>
+
+    <!-- RENDER -->
+    <div class="panel" id="p-render">
+      <p class="hint">Re-render the subtitle layers from a saved plan sidecar — no model, no DB.
+        Notes baked at process time are reused (or override with a file).</p>
+      <label class="f" data-tip="The .plan.json written next to an episode's output. It holds every injection plus the baked notes, so layers can be rebuilt exactly without the model or database.">Plan sidecar (.plan.json)</label>
+      <div class="pick"><input type="text" id="r_plan" placeholder="…/ep.bll.plan.json">
+        <button class="btn" onclick="browse('r_plan')">browse</button></div>
+      <label class="f" data-tip="The original English subtitle to inject into. Leave blank to use the path recorded in the plan.">Original EN subtitle (optional)</label>
+      <div class="pick"><input type="text" id="r_en" placeholder="default: from plan">
+        <button class="btn" onclick="browse('r_en')">browse</button></div>
+      <label class="f" data-tip="Where to write the rebuilt subtitle layers.">Output</label>
+      <div class="pick"><input type="text" id="r_out" placeholder="…/out.ass">
+        <button class="btn" onclick="browse('r_out',true)">dir</button></div>
+      <label class="chk" data-tip="Annotate readings in romaji instead of kana."><input type="checkbox" id="r_romaji"> Romaji</label>
+      <button class="btn go" onclick="runRender()">Render layers</button>
+    </div>
+
+    <!-- MODEL -->
+    <div class="panel" id="p-model">
+      <p class="hint">The aligner runs locally on ollama. Bootstrap reuses any ollama it finds,
+        pulls the base model only if missing, and builds the tuned profile (auto-fits your GPU).</p>
+      <div id="ollama-detail" class="legend"></div>
+      <label class="f" data-tip="Where ollama is listening. Leave blank to auto-detect (localhost, then the host machine, then a sibling container).">ollama URL (optional override)</label>
+      <input type="text" id="ollama_url" placeholder="auto: localhost / host / sibling">
+      <button class="btn go" onclick="runBootstrap()">Bootstrap aligner</button>
+    </div>
+  </section>
+
+  <!-- VOCABULARY -->
+  <section class="vocab">
+    <div class="tlwrap">
+      <div class="tlbar">
+        <span class="tltitle">Timeline</span>
+        <span class="tlpos" id="tlpos"></span>
+        <span class="spacer"></span>
+        <select class="campaign" id="branchsel" style="font-size:.72rem"
+          data-tip="Active branch. Switch to view or continue a different timeline — every branch keeps its own vocabulary state."></select>
+        <span class="hint" style="margin:0" data-tip="Click episodes to select; then rename their show, or branch from a single one to rewind.">click to select</span>
+      </div>
+      <div class="tl" id="timeline"></div>
+      <div class="tlsel" id="tlsel">
+        <span class="tlsel-count" id="tlsel-count"></span>
+        <input id="tlsel-show" placeholder="show name for selected…"
+          data-tip="Set this show on every selected episode at once.">
+        <button class="btn" onclick="setAnimeSelected()">set show</button>
+        <button class="btn" id="tlsel-edit" onclick="editSelected()"
+          data-tip="Edit one episode's show + number.">edit #</button>
+        <button class="btn" id="tlsel-branch" onclick="branchHere()"
+          data-tip="Rewind to this episode as a NEW branch and continue from here (e.g. start a different season). Your current timeline is kept and switchable.">branch here ⎇</button>
+        <button class="btn ghost" onclick="clearSel()" data-tip="Deselect every selected episode at once (returns the vocabulary to the present).">clear selection</button>
+      </div>
+    </div>
+    <div class="vhead">
+      <h2>Vocabulary</h2>
+      <div class="vfilter" id="vfilter">
+        <button data-s="all" class="on" data-tip="Every word, ordered active → learned → known → ignored, most-recent first.">all</button>
+        <button data-s="active" data-tip="Words still in the active learning slot (not yet consolidated).">active</button>
+        <button data-s="learned" data-tip="Words consolidated out of the active slot — graduated automatically.">learned</button>
+        <button data-s="ignored" data-tip="Words you've manually excluded — never injected (e.g. a character name).">ignored</button>
+      </div>
+      <span class="spacer"></span>
+      <select class="campaign" id="sortby" style="font-size:.72rem" data-tip="Order within each group. Last seen = most recently injected on screen · Last added = most recently introduced to the database · Injections = lifetime injection count · Fade = how much reading annotation remains (most still-fading first).">
+        <option value="seen">last seen</option>
+        <option value="added">last added</option>
+        <option value="injections">injections</option>
+        <option value="fade">fade</option>
+      </select>
+      <label class="chk" style="margin:0" data-tip="Show readings as romaji (Latin letters) instead of kana."><input type="checkbox" id="readingMode" checked> romaji</label>
+    </div>
+    <div class="pvbanner" id="pvbanner"></div>
+    <div class="legend">The underline is the <i>fade</i>: strong while a word is freshly introduced, draining to nothing as it graduates to bare kanji. A <b>learned</b> tag means the word has consolidated out of the active slot. Notes are editable inline.</div>
+    <div class="wordlist" id="wordlist"></div>
+  </section>
+</main>
+
+<div id="console">
+  <div class="con-head">
+    <span class="lbl" id="con-lbl">job</span>
+    <span class="st running" id="con-st">running</span>
+    <button class="x" onclick="document.getElementById('console').classList.remove('open')">×</button>
+  </div>
+  <div class="con-body" id="con-body"></div>
+</div>
+
+<div class="modal" id="modal"><div class="browser">
+  <div class="br-head" id="br-path"></div>
+  <div class="br-list" id="br-list"></div>
+</div></div>
+
+<div class="modal" id="epmodal"><div class="epcard">
+  <div class="ec-title" id="ee_title">Episode</div>
+  <label class="f" data-tip="The show this episode belongs to. Each episode has its own, so a campaign can mix shows.">Show / series</label>
+  <input type="text" id="ee_show" placeholder="e.g. a show title">
+  <label class="f" data-tip="The episode number within its show. Free text, so 12.5 / OVA / movie all work.">Episode number</label>
+  <input type="text" id="ee_ep" placeholder="e.g. 4">
+  <div class="ec-actions">
+    <button class="btn go" style="margin-top:0;width:auto" onclick="saveEp()">Save</button>
+    <span class="spacer"></span>
+    <button class="btn ghost" onclick="closeEp()">cancel</button>
+  </div>
+</div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+let CFG={}, DEFAULTS={}, READINGMODE=true, VIEW="all";
+async function api(path,method="GET",body){
+  const o={method,headers:{"Content-Type":"application/json"}};
+  if(body)o.body=JSON.stringify(body);
+  const r=await fetch(path,o);
+  if(!r.ok){const t=await r.text();throw new Error(t);}
+  return r.json();
+}
+function toast(msg,bad){const t=$("toast");t.textContent=msg;t.className="toast"+(bad?" bad":"");
+  t.style.display="block";setTimeout(()=>t.style.display="none",4000);}
+
+/* ---- tabs ---- */
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll(".panel").forEach(x=>x.classList.remove("active"));
+  t.classList.add("active");$("p-"+t.dataset.tab).classList.add("active");
+});
+
+/* ---- config / campaigns / stats / ollama ---- */
+async function loadConfig(){
+  CFG=await api("/api/config");DEFAULTS=CFG.defaults;
+  const sel=$("campaign");sel.innerHTML="";
+  CFG.campaigns.forEach(c=>{const o=document.createElement("option");
+    o.value=c.path;o.textContent=c.name;if(c.path===CFG.active_db)o.selected=true;sel.appendChild(o);});
+  const cur=document.createElement("option");
+  if(!CFG.campaigns.find(c=>c.path===CFG.active_db)){cur.value=CFG.active_db;
+    cur.textContent=CFG.active_db.split("/").pop();cur.selected=true;sel.appendChild(cur);}
+  // prefill knob defaults
+  for(const k of ["new_words","max_active","learning_threshold","min_count","min_zipf",
+    "max_per_cue","kana_threshold","decay_tokens","note_threshold","include_pos"])
+    if($(k)&&DEFAULTS[k]!=null)$(k).value=DEFAULTS[k];
+  $("backend").value=DEFAULTS.backend;
+  $("s_new_words").value=DEFAULTS.new_words;$("s_max_active").value=DEFAULTS.max_active;
+}
+$("campaign").onchange=async e=>{await api("/api/config","POST",{active_db:e.target.value});
+  loadStats();await loadTimeline();loadWords();toast("campaign → "+e.target.selectedOptions[0].textContent);};
+
+async function loadStats(){
+  const lt=$("learning_threshold").value||DEFAULTS.learning_threshold;
+  const at=PREVIEW_AT!=null?`&at=${PREVIEW_AT}`:"";
+  const s=await api("/api/stats?learning_threshold="+lt+at);
+  const known=s.known?` · <b class=jade>${s.known}</b> known`:"";
+  $("hstats").innerHTML=`<b>${s.episodes}</b> episodes · `+
+    `<b class=jade>${s.learned}</b> learned · <b class=amber>${s.active}</b> active`+
+    known+` · <b>${s.injections}</b> injections`;
+  $("hstats").title=`${s.learned} words consolidated out of the active slot (learned) · `+
+    `${s.active} still in active learning · ${s.known} manually marked known · ${s.ignored} ignored`;
+}
+async function loadOllama(){
+  let o;try{o=await api("/api/ollama");}catch(e){o={reachable:false};}
+  const el=$("ollama");const dot=o.reachable?(o.profile_ready?"ok":"warn"):"";
+  el.innerHTML=`<span class="dot ${dot}"></span>aligner`;
+  el.title=o.reachable?(o.profile_ready?`ready · ${o.profile} @ ${o.url}`:
+    `ollama up, profile '${o.profile}' missing — Bootstrap`):"no ollama found — Bootstrap";
+  $("ollama-detail").innerHTML=o.reachable?
+    `ollama: <b>${o.url}</b><br>base ${o.base}: ${o.base_present?"✓":"missing"} · `+
+    `profile ${o.profile}: ${o.profile_ready?"✓ ready":"not built"}`:
+    "no reachable ollama — install it and Bootstrap, or set a URL.";
+}
+
+/* ---- episode timeline ---- */
+let EPISODES=[], EP_LABEL={}, BRANCHES=[], CURRENT_BRANCH="main", SEEKABLE=[];
+async function loadTimeline(){
+  const [d,tlst]=await Promise.all([api("/api/episodes"),api("/api/timeline")]);
+  EPISODES=d.episodes;BRANCHES=tlst.branches;CURRENT_BRANCH=tlst.current;SEEKABLE=tlst.seekable||[];
+  renderBranchSel();
+  EP_LABEL={};
+  EPISODES.forEach(e=>{EP_LABEL[e.name]=e.label;});
+  const tl=$("timeline");tl.innerHTML="";
+  if(!EPISODES.length){tl.innerHTML='<p class="hint">No episodes processed yet.</p>';
+    $("tlpos").textContent="";return;}
+  $("tlpos").textContent=`${EPISODES.length} episodes watched · now at #${EPISODES.length} (newest first)`;
+  for(const e of [...EPISODES].reverse()){   // newest on the left
+    const div=document.createElement("div");div.className="tl-ep"+(SELECTED.has(e.id)?" sel":"");
+    div.dataset.tip=`${e.label} · processed ${e.processed_at} · +${e.new_words} new words · ${e.replacements} injections · click to select`;
+    const ep=e.episode_no?("E"+e.episode_no):e.name.replace(/\.(ja|en)\..*$/,"");
+    const show=e.show?esc(e.show):'<span class="unset">no show</span>';
+    div.innerHTML=`<div class="tl-pos">#${e.position}</div>
+      <div class="tl-show">${show}</div>
+      <div class="tl-label">${ep}</div>
+      <div class="tl-meta">+${e.new_words}w</div>`;
+    div.onclick=()=>{SELECTED.has(e.id)?SELECTED.delete(e.id):SELECTED.add(e.id);
+      div.classList.toggle("sel");renderSel();};
+    tl.appendChild(div);
+  }
+  renderSel();
+}
+/* ---- timeline selection (multi-select -> rename show; single -> seek preview) ---- */
+let SELECTED=new Set(), PREVIEW_AT=null;
+function updatePreview(){
+  // selecting exactly one earlier (snapshotted) episode rewinds the vocab to it
+  let at=null;
+  if(SELECTED.size===1){
+    const e=EPISODES.find(x=>x.id===[...SELECTED][0]);
+    if(e&&SEEKABLE.includes(e.position)&&e.position<EPISODES.length)at=e.position;
+  }
+  if(at!==PREVIEW_AT){PREVIEW_AT=at;loadWords();loadStats();renderBanner();}
+}
+function renderBanner(){
+  const b=$("pvbanner");
+  if(PREVIEW_AT==null){b.classList.remove("on");return;}
+  const e=EPISODES.find(x=>x.position===PREVIEW_AT);
+  b.classList.add("on");
+  b.innerHTML=`⏪ Vocabulary as of <b>${e?esc(e.label):("#"+PREVIEW_AT)}</b> — read-only. `+
+    `<b>Branch here</b> to continue from this point, or <b>clear selection</b> to return to now.`;
+}
+function renderSel(){
+  const bar=$("tlsel");const n=SELECTED.size;
+  bar.classList.toggle("on",n>0);
+  updatePreview();
+  if(!n)return;
+  $("tlsel-count").textContent=`${n} selected`;
+  $("tlsel-edit").style.display=n===1?"":"none";
+  const one=n===1?EPISODES.find(e=>e.id===[...SELECTED][0]):null;
+  $("tlsel-branch").style.display=(one&&SEEKABLE.includes(one.position))?"":"none";
+  // prefill the input with a common show name if the selection shares one
+  const shows=[...SELECTED].map(id=>(EPISODES.find(e=>e.id===id)||{}).show);
+  const common=shows.every(s=>s===shows[0])?(shows[0]||""):"";
+  if(document.activeElement!==$("tlsel-show"))$("tlsel-show").value=common;
+}
+function clearSel(){SELECTED.clear();
+  document.querySelectorAll(".tl-ep.sel").forEach(x=>x.classList.remove("sel"));renderSel();}
+async function setAnimeSelected(){
+  const show=$("tlsel-show").value.trim();
+  const ids=[...SELECTED];
+  try{await Promise.all(ids.map(id=>api("/api/episode/"+id,"POST",{show})));
+    toast(`show ${show?("set · "+show):"cleared"} on ${ids.length} episode${ids.length>1?"s":""}`);
+    SELECTED.clear();await loadTimeline();loadWords();}catch(e){toast("failed",true);}
+}
+function editSelected(){
+  if(SELECTED.size!==1)return;
+  const e=EPISODES.find(x=>x.id===[...SELECTED][0]);if(e)openEp(e);
+}
+/* ---- branches ---- */
+function renderBranchSel(){
+  const sel=$("branchsel");sel.innerHTML="";
+  BRANCHES.forEach(b=>{const o=document.createElement("option");o.value=b.id;
+    o.textContent=`⎇ ${b.name} · #${b.head_pos}`;if(b.active)o.selected=true;sel.appendChild(o);});
+  sel.style.display=BRANCHES.length>1?"":"none";   // only show once there's a choice
+}
+$("branchsel").onchange=async e=>{
+  try{await api("/api/timeline/switch","POST",{branch:e.target.value});
+    toast("switched branch → "+e.target.value);SELECTED.clear();
+    await loadTimeline();loadWords();loadStats();}catch(err){toast(err.message||"switch failed",true);}
+};
+function branchHere(){
+  if(SELECTED.size!==1)return;
+  const e=EPISODES.find(x=>x.id===[...SELECTED][0]);if(!e)return;
+  const name=prompt(`Rewind to #${e.position} (${e.label}) as a new branch.\nName the new branch:`,"");
+  if(!name)return;
+  api("/api/timeline/branch","POST",{position:e.position,name}).then(async r=>{
+    toast(`branched at #${e.position} → ${r.branch}`);SELECTED.clear();
+    await loadTimeline();loadWords();loadStats();
+  }).catch(err=>toast(err.message||"branch failed",true));
+}
+/* ---- per-episode metadata editor ---- */
+let EE_ID=null;
+function openEp(e){
+  EE_ID=e.id;$("ee_title").textContent=`Episode #${e.position}`;
+  $("ee_show").value=e.show||"";$("ee_ep").value=e.episode_no||"";
+  $("epmodal").classList.add("open");setTimeout(()=>$("ee_show").focus(),30);
+}
+function closeEp(){$("epmodal").classList.remove("open");EE_ID=null;}
+async function saveEp(applyAll){
+  const show=$("ee_show").value.trim(), ep=$("ee_ep").value.trim();
+  try{
+    if(applyAll){await Promise.all(EPISODES.map(e=>api("/api/episode/"+e.id,"POST",{show})));
+      toast("show set on all episodes · "+(show||"cleared"));}
+    else{await api("/api/episode/"+EE_ID,"POST",{show,episode_no:ep});toast("episode updated");}
+    closeEp();await loadTimeline();loadWords();
+  }catch(err){toast("save failed",true);}
+}
+
+/* ---- vocabulary ---- */
+$("readingMode").onchange=e=>{READINGMODE=e.target.checked;renderWords();};
+$("sortby").onchange=()=>renderWords();
+document.querySelectorAll("#vfilter button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("#vfilter button").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on");VIEW=b.dataset.s;renderWords();});
+
+let ALLWORDS=[];
+async function loadWords(){
+  const kt=$("kana_threshold").value||DEFAULTS.kana_threshold;
+  const nt=$("note_threshold").value||DEFAULTS.note_threshold;
+  const lt=$("learning_threshold").value||DEFAULTS.learning_threshold;
+  const at=PREVIEW_AT!=null?`&at=${PREVIEW_AT}`:"";
+  const d=await api(`/api/words?status=all&kana_threshold=${kt}&note_threshold=${nt}&learning_threshold=${lt}${at}`);
+  ALLWORDS=d.words;renderWords();
+}
+function wview(w){            // lifecycle bucket, not raw status
+  if(w.status==='ignored')return 'ignored';
+  if(w.status==='known')return 'known';
+  return w.learned?'learned':'active';
+}
+function renderWords(){
+  const wl=$("wordlist");wl.innerHTML="";
+  document.querySelector(".vocab").classList.toggle("preview",PREVIEW_AT!=null);
+  const rank={active:0,learned:1,known:2,ignored:3};
+  const keys={seen:w=>w.recency, added:w=>w.added, injections:w=>w.exposures, fade:w=>w.fade};
+  const key=keys[$("sortby").value]||keys.seen;
+  const ws=ALLWORDS.filter(w=>VIEW==='all'||wview(w)===VIEW)
+    .sort((a,b)=>(rank[wview(a)]-rank[wview(b)])||((key(b)||0)-(key(a)||0))||(b.exposures-a.exposures));
+  if(!ws.length){wl.innerHTML='<p class="hint">No words here yet.</p>';return;}
+  const badge={active:'<span class="badge active">active</span>',
+    learned:'<span class="badge">learned</span>',
+    known:'<span class="badge known">known</span>',
+    ignored:'<span class="badge ig">ignored</span>'};
+  const tipv={active:'Still in the active learning slot.',
+    learned:'Consolidated out of the active slot — learned.',
+    known:'Manually marked known — no longer injected.',
+    ignored:'Manually ignored — never injected.'};
+  for(const w of ws){
+    const view=wview(w);
+    const reading=READINGMODE?(w.romaji||""):(w.reading||"");
+    const div=document.createElement("div");
+    div.className="word "+view+(w.stage==="bare"?" bare":"");
+    div.style.setProperty("--fade",w.fade);
+    const rt=reading&&reading!==w.lemma?`<rt>${reading}</rt>`:"";
+    div.innerHTML=`
+      <div class="w-top">
+        <ruby class="lex">${w.lemma}${rt}</ruby>
+        <span class="w-stage" data-tip="${tipv[view]} ${w.exposures} lifetime injections.">${badge[view]}<br><span class="w-exp">${w.exposures}×</span><br><span class="w-gap" data-tip="Last seen ${fmtGap(w.gap)} ago — Japanese tokens of content watched since this word was last on screen (the forgetting clock). Its reading reappears after the decay window.">${w.gap<=0?'just seen':fmtGap(w.gap)+' ago'}</span></span>
+      </div>
+      <div class="gloss">${w.gloss||""}</div>
+      ${lifeLine(w)}
+      <input class="note" value="${(w.note||w.note_effective||"").replace(/"/g,'&quot;')}"
+        placeholder="${(w.note_effective||"note").replace(/"/g,'&quot;')}"
+        data-lemma="${w.lemma}" data-auto="${(w.note_effective||"").replace(/"/g,'&quot;')}"
+        data-tip="The on-screen note for this word. Edit freely; blank reverts to the auto ‘kanji (reading) = meaning’.">
+      <div class="w-ov">
+        <select class="ov" data-lemma="${w.lemma}" data-tip="Override how this word is handled. auto: the system manages it (active → learned). known: stop injecting it. ignored: never inject it.">
+          <option value="learning"${w.status==='learning'?' selected':''}>auto</option>
+          <option value="known"${w.status==='known'?' selected':''}>known</option>
+          <option value="ignored"${w.status==='ignored'?' selected':''}>ignored</option>
+        </select>
+      </div>`;
+    wl.appendChild(div);
+  }
+  // note editing (save on blur / Enter)
+  wl.querySelectorAll(".note").forEach(inp=>{
+    const save=async()=>{const v=inp.value.trim();
+      const note=(v===""||v===inp.dataset.auto)?"":v;   // blank/auto => clear override
+      try{await api("/api/word/"+encodeURIComponent(inp.dataset.lemma),"POST",{note});
+        toast("note saved · "+inp.dataset.lemma);}catch(e){toast("save failed",true);}};
+    inp.addEventListener("blur",save);
+    inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();inp.blur();}});
+  });
+  wl.querySelectorAll(".ov").forEach(s=>s.onchange=async()=>{
+    try{await api("/api/word/"+encodeURIComponent(s.dataset.lemma),"POST",{status:s.value});
+      loadWords();loadStats();}catch(e){toast("override failed",true);}});
+}
+
+/* ---- jobs / console (SSE) ---- */
+function openConsole(label){const c=$("console");c.classList.add("open");
+  $("con-lbl").textContent=label;$("con-body").innerHTML="";
+  const st=$("con-st");st.textContent="running";st.className="st running";}
+function colorize(line){
+  if(/Dictionary veto|FAILED|error/i.test(line))return `<span class="veto">${esc(line)}</span>`;
+  if(/^\s*NEW |new word/i.test(line))return `<span class="new">${esc(line)}</span>`;
+  if(/Wrote|complete|ready|installed|Ready/i.test(line))return `<span class="ok">${esc(line)}</span>`;
+  return esc(line);
+}
+function esc(s){return s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+function fmtGap(g){g=Math.max(0,g);return g>=1000?(g/1000).toFixed(1)+"k tok":g+" tok";}
+function epLabel(name){return name?(EP_LABEL[name]||name.replace(/\.(ja|en)\..*$/,"")):"—";}
+function lifeLine(w){
+  const intro=epLabel(w.introduced_in);
+  const learned=w.learned_in?`<b>learned ${epLabel(w.learned_in)}</b>`:"still active";
+  return `<div class="w-life" data-tip="Where this word was introduced and the episode it consolidated (learned).">intro ${intro} → ${learned}</div>`;
+}
+function streamJob(jobId,onEnd){
+  const body=$("con-body");
+  const es=new EventSource(`/api/jobs/${jobId}/stream`);
+  es.onmessage=e=>{const line=JSON.parse(e.data);
+    body.insertAdjacentHTML("beforeend",colorize(line)+"\n");body.scrollTop=body.scrollHeight;};
+  es.addEventListener("end",e=>{es.close();const d=JSON.parse(e.data);
+    const st=$("con-st");st.textContent=d.status;st.className="st "+d.status;
+    if(onEnd)onEnd(d);});
+  es.onerror=()=>{es.close();};
+}
+function knobs(){return {
+  new_words:+$("new_words").value, max_active:+$("max_active").value,
+  learning_threshold:+$("learning_threshold").value, min_count:+$("min_count").value,
+  min_zipf:+$("min_zipf").value, max_per_cue:+$("max_per_cue").value,
+  kana_threshold:+$("kana_threshold").value, decay_tokens:+$("decay_tokens").value,
+  note_threshold:+$("note_threshold").value, include_pos:$("include_pos").value,
+  backend:$("backend").value, model:$("model").value.trim()||null,
+  notes:$("notes").value.trim()||null, romaji:$("romaji").checked,
+  no_dict:$("no_dict").checked, dry_run:$("dry_run").checked,
+  season_dir:$("season_dir").value.trim()||null,
+};}
+function autoMeta(){   // auto-detect show + episode from the filename (folder fallback), editable
+  const p=$("ja_sub").value.trim();if(!p)return;
+  const parts=p.split("/");const base=parts.pop()||"";const folder=parts.pop()||"";
+  const stem=base.replace(/\.(ja|en)\..+$/,"").replace(/\.(srt|ass|ssa|vtt|bll)$/,"");
+  const clean=stem.replace(/[\[(][^\])]*[\])]/g," ").replace(/[._]+/g," ");
+  const m=clean.match(/s\d+\s*e\s*0*(\d+)/i)
+    ||clean.match(/(?:\bep|\bepisode|[-–—]\s*|\bx|\be)\s*0*(\d+)\b/i)
+    ||clean.match(/\b0*(\d{1,3})\b/);
+  const ep=m?m[1]:"";
+  const title=(m?clean.slice(0,m.index):clean).replace(/\s+/g," ").replace(/^[-–—_ ]+|[-–—_ ]+$/g,"");
+  const show=title||folder||"";
+  if(!$("show_in").value&&show)$("show_in").value=show;
+  if(!$("ep_in").value&&ep)$("ep_in").value=ep;
+}
+$("ja_sub").addEventListener("input",autoMeta);
+async function runProcess(){
+  const b={ja_sub:$("ja_sub").value.trim(),en_sub:$("en_sub").value.trim(),
+    output:$("output").value.trim()||null,
+    show:$("show_in").value.trim()||null,episode:$("ep_in").value.trim()||null,...knobs()};
+  if(!b.ja_sub||!b.en_sub)return toast("pick both JA and EN subtitles",true);
+  try{openConsole("process "+b.ja_sub.split("/").pop());
+    const r=await api("/api/process","POST",b);
+    streamJob(r.job_id,async()=>{await loadTimeline();loadWords();loadStats();});}catch(e){toast(e.message,true);}
+}
+async function runSeason(){
+  const b={dir:$("s_dir").value.trim(),install_dir:$("s_install").value.trim()||null,
+    new_words:+$("s_new_words").value,max_active:+$("s_max_active").value,
+    show:$("s_show").value.trim()||null,
+    romaji:$("s_romaji").checked,backend:DEFAULTS.backend};
+  if(!b.dir)return toast("pick a season folder",true);
+  try{const r=await api("/api/season","POST",b);
+    openConsole(`season · ${r.episodes.length} eps`);
+    streamJob(r.job_id,async()=>{await loadTimeline();loadWords();loadStats();});}catch(e){toast(e.message,true);}
+}
+async function runRender(){
+  const b={plan:$("r_plan").value.trim(),en_sub:$("r_en").value.trim()||null,
+    output:$("r_out").value.trim(),romaji:$("r_romaji").checked};
+  if(!b.plan||!b.output)return toast("plan and output required",true);
+  try{openConsole("render");const r=await api("/api/render","POST",b);streamJob(r.job_id);}
+  catch(e){toast(e.message,true);}
+}
+async function runBootstrap(){
+  try{openConsole("bootstrap aligner");
+    const r=await api("/api/bootstrap","POST",{ollama_url:$("ollama_url").value.trim()||null});
+    streamJob(r.job_id,()=>loadOllama());}catch(e){toast(e.message,true);}
+}
+
+/* ---- file browser ---- */
+let BR_TARGET=null, BR_DIRONLY=false;
+async function browse(targetId,dirOnly){BR_TARGET=targetId;BR_DIRONLY=!!dirOnly;
+  const start=$(targetId).value.trim();
+  openBrowser(start?start.replace(/\/[^/]*$/,"")||"/":CFG.cwd);}
+async function openBrowser(dir){
+  let d;try{d=await api("/api/browse?dir="+encodeURIComponent(dir));}
+  catch(e){return toast("cannot open "+dir,true);}
+  $("modal").classList.add("open");$("br-path").textContent=d.dir;
+  const list=$("br-list");list.innerHTML="";
+  const up=document.createElement("div");up.className="br-item";
+  up.innerHTML='<span class="ic">..</span><span>parent</span>';
+  up.onclick=()=>openBrowser(d.parent);list.appendChild(up);
+  if(BR_DIRONLY){const pick=document.createElement("div");pick.className="br-item sub";
+    pick.innerHTML='<span class="ic">✓</span><span>use this folder</span>';
+    pick.onclick=()=>{$(BR_TARGET).value=d.dir;close();};list.appendChild(pick);}
+  d.dirs.forEach(n=>{const it=document.createElement("div");it.className="br-item";
+    it.innerHTML=`<span class="ic">dir</span><span>${n}/</span>`;
+    it.onclick=()=>openBrowser(d.dir+"/"+n);list.appendChild(it);});
+  if(!BR_DIRONLY)d.subs.forEach(n=>{const it=document.createElement("div");it.className="br-item sub";
+    it.innerHTML=`<span class="ic">sub</span><span>${n}</span>`;
+    it.onclick=()=>{$(BR_TARGET).value=d.dir+"/"+n;if(BR_TARGET==='ja_sub')autoMeta();close();};list.appendChild(it);});
+  function close(){$("modal").classList.remove("open");}
+  $("modal").onclick=e=>{if(e.target===$("modal"))close();};
+}
+
+/* ---- hover tooltips ---- */
+const tip=document.createElement("div");tip.id="tip";document.body.appendChild(tip);
+function placeTip(t){const r=t.getBoundingClientRect();
+  const tw=tip.offsetWidth, th=tip.offsetHeight;   // measure actual size, then clamp
+  let left=r.left; if(left+tw>window.innerWidth-8) left=window.innerWidth-tw-8;
+  let top=r.bottom+8; if(top+th>window.innerHeight-8) top=r.top-th-8;
+  tip.style.left=Math.max(8,left)+"px"; tip.style.top=Math.max(8,top)+"px";}
+document.addEventListener("mouseover",e=>{const t=e.target.closest("[data-tip]");
+  if(!t)return;tip.textContent=t.dataset.tip;tip.classList.add("show");placeTip(t);});
+document.addEventListener("mouseout",e=>{if(e.target.closest("[data-tip]"))tip.classList.remove("show");});
+
+$("epmodal").onclick=e=>{if(e.target===$("epmodal"))closeEp();};
+
+/* ---- boot ---- */
+(async()=>{await loadConfig();loadStats();await loadTimeline();loadWords();loadOllama();
+  setInterval(loadOllama,15000);})();
+</script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+[project]
+name = "bll"
+version = "0.1.0"
+description = "Bilingual subtitle language learning: inject Japanese words into English subtitles"
+requires-python = ">=3.9"
+dependencies = [
+    "pysubs2>=1.6",
+    "fugashi[unidic-lite]>=1.3",
+    "wordfreq[cjk]>=3.0",
+    "pykakasi>=2.2",
+    "simplemma>=1.0",
+]
+
+[project.optional-dependencies]
+web = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.27",
+]
+
+[project.scripts]
+bll = "bll.cli:main"
+
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["bll"]
+
+[tool.setuptools.package-data]
+bll = ["static/*"]

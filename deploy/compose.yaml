@@ -1,0 +1,53 @@
+# bll — Mode B: turnkey `docker compose up`.
+#
+# Two run shapes, no code change between them:
+#
+#   You already run ollama on the host (the common case):
+#       docker compose up
+#     bll-web reuses the host's ollama via host.docker.internal — no second
+#     ollama, no GPU passthrough into a container.
+#
+#   You have no host ollama and want the bundled GPU one:
+#       docker compose --profile bundled up
+#     starts an ollama container (needs nvidia-container-toolkit for GPU; without
+#     it, delete the `deploy:` block below to run ollama on CPU).
+#
+# The app auto-detects which is present (it probes host first, then the sibling),
+# pulls the base model if missing, and builds the aligner profile on startup.
+
+services:
+  bll-web:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: bll-web
+    ports:
+      - "8000:8000"
+    volumes:
+      - bll-data:/data                      # DB, campaigns, JMdict cache, backups
+      - ${BLL_MEDIA:-./media}:/media        # subtitles/videos to browse & process
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # lets the app reach a host ollama (Linux)
+    environment:
+      - BLL_WAIT=60
+      # OLLAMA_URL is left unset on purpose: the app probes host.docker.internal
+      # first, then the `ollama` sibling. Pin it here to force a specific box.
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    profiles: ["bundled"]                    # only with `--profile bundled`
+    volumes:
+      - ollama-models:/root/.ollama
+    deploy:                                  # GPU; delete this block for CPU-only
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: ["gpu"]
+    restart: unless-stopped
+
+volumes:
+  bll-data:
+  ollama-models:

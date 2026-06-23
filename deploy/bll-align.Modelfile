@@ -1,0 +1,19 @@
+# bll aligner profile — portable across GPUs.
+#
+# The aligner needs only a small context (<1.3k tokens/call) and must be
+# deterministic, so we pin a small num_ctx and temperature 0. We deliberately do
+# NOT set num_gpu: that is a per-GPU VRAM-fit tuning (the author's 6 GB card wants
+# ~36 layers; a bigger card wants all of them). Omitting it lets ollama auto-fit
+# each machine, so the same profile runs on a laptop iGPU and a 24 GB card alike.
+#
+# TEMPLATE {{ .Prompt }} passes bll's prompt through verbatim (the lean aligner
+# prompt is self-contained; the base chat template would corrupt it).
+#
+# Build:  ollama create bll-align -f deploy/bll-align.Modelfile
+# (or just run `bll bootstrap`, which pulls the base and creates this for you)
+FROM gemma4:12b-it-qat
+TEMPLATE {{ .Prompt }}
+PARAMETER num_ctx 2048
+PARAMETER temperature 0
+PARAMETER top_k 64
+PARAMETER top_p 0.95
