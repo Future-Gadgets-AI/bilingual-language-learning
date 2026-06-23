@@ -36,6 +36,11 @@ Each `process` run:
 
 The dictionary and reading data are downloaded automatically on first run.
 
+Alignment runs locally via Ollama by default — no API key, no cost. A
+`--backend claude` opt-in aligns through the Claude CLI instead; it spends your
+Claude tokens and prints a warning first, so the paid path is never taken
+silently.
+
 ## Output: four layers per episode
 
 `process` writes four subtitle files (and a `.plan.json` sidecar that can
