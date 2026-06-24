@@ -203,13 +203,16 @@ def run_ollama(prompt, model, url="http://localhost:11434", timeout=120,
 OLLAMA_CHUNK = 10  # small batches: local models lazy-null on long tails
 
 
-def gloss_and_align(entries, model=None, backend="claude",
+def gloss_and_align(entries, model=None, backend="ollama",
                     ollama_url="http://localhost:11434", think=False):
     """Returns dict lemma -> {gloss, reading, matches: {id: en_word|None}}.
 
     claude backend: one batch call for the whole episode.
     ollama backend: one call per word per chunk of <=OLLAMA_CHUNK occurrences
     (small models stay accurate on small batches; results are merged).
+
+    Defaults to the local 'ollama' path: a caller that omits `backend` must
+    never silently spend paid tokens on the 'claude' path.
     """
     if backend == "claude":
         raw = run_claude(build_prompt(entries), model=model)

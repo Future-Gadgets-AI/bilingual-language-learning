@@ -638,6 +638,28 @@ def cmd_process(args):
         aligned = {}
         if lean:
             n_occ = sum(len(e["occurrences"]) for e in lean)
+            # Backend gate: never spend paid tokens silently. 'claude' shells
+            # out to the Claude CLI and bills the user, so it is an explicit,
+            # warned opt-in; 'ollama' is the local no-cost default. If the local
+            # path is the choice but unreachable, stop with guidance rather than
+            # silently falling back to a paid backend.
+            if args.backend == "claude":
+                print("WARNING: --backend claude uses the Claude CLI and "
+                      "spends your Claude tokens to align this episode. Use "
+                      "--backend ollama for the local, no-cost path.",
+                      file=sys.stderr)
+            else:
+                from . import bootstrap
+                if not bootstrap.reachable(args.ollama_url):
+                    print(
+                        f"error: no reachable ollama at {args.ollama_url}; "
+                        "cannot align this episode.\n"
+                        "  - start it:  ollama serve   "
+                        "(install: https://ollama.com), then `bll bootstrap`\n"
+                        "  - or opt in to the paid path:  --backend claude  "
+                        "(spends your Claude tokens)",
+                        file=sys.stderr)
+                    return 1
             print(f"\nAligning {n_occ} occurrences via {args.backend}...")
             aligned = glossm.gloss_and_align(lean, model=args.model,
                                              backend=args.backend,
@@ -1107,8 +1129,10 @@ def main(argv=None):
                          "(default noun,adj - JA verbs sit awkwardly in EN frames)")
     pp.add_argument("--no-dict", action="store_true",
                     help="disable the JMdict canonical-pair filter")
-    pp.add_argument("--backend", choices=["claude", "ollama"], default="claude",
-                    help="alignment model backend (default claude)")
+    pp.add_argument("--backend", choices=["claude", "ollama"], default="ollama",
+                    help="alignment backend (default ollama: local, no cost). "
+                         "'claude' shells out to the Claude CLI and spends "
+                         "Claude tokens.")
     pp.add_argument("--model", default=None,
                     help="model name (claude model id, or ollama tag like gemma3:12b)")
     pp.add_argument("--ollama-url", default="http://localhost:11434",
@@ -1117,7 +1141,7 @@ def main(argv=None):
                     help="enable model thinking (ollama backend; ~15x slower "
                          "for no quality gain in testing - off by default)")
     pp.add_argument("--gloss-json", default=None,
-                    help="use this JSON file instead of calling claude")
+                    help="use this JSON file instead of calling the aligner")
     pp.add_argument("--dry-run", action="store_true",
                     help="only show selected words")
     pp.set_defaults(func=cmd_process)
