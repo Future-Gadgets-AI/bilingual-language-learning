@@ -64,6 +64,8 @@ The reading annotation can be hiragana or romaji (`--romaji`).
 ## Install
 
 ```bash
+git clone https://github.com/Future-Gadgets-AI/bilingual-language-learning.git
+cd bilingual-language-learning
 pip install -e .            # or: pip install -e '.[web]' for the web console
 ```
 
@@ -125,3 +127,7 @@ Run `bll <command> -h` for the full list.
 
 `deploy/` contains a Dockerfile, a Compose file, and a Modelfile for running the
 tool and its aligner together. See the comments in those files for details.
+
+## License
+
+Released under the [MIT License](LICENSE). © 2026 Future Gadgets AI.
