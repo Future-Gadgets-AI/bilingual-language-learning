@@ -1,0 +1,5 @@
+# Code owners — a review from one of these humans is required to merge into `main`
+# (paired with branch protection's "Require review from Code Owners").
+# Any one of them satisfies the requirement; order below is cosmetic.
+
+* @gustavomoura628 @lucasbrandao4770 @thallersubtil
